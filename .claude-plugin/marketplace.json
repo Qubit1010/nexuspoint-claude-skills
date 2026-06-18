@@ -16,6 +16,14 @@
       "version": "1.0.0",
       "category": "knowledge",
       "keywords": ["claude", "claude-code", "claude-cowork", "anthropic", "models", "advisor", "guide"]
+    },
+    {
+      "name": "marketing-advisor",
+      "source": "./plugins/marketing-advisor",
+      "description": "A research-backed marketing advisor for agencies and founders: ICP targeting, LinkedIn/Instagram strategy, content calendars, cold email, offer positioning and pricing, paid ads, and automation. Grounded in a 234-source 2026 synthesis with a live channel-benchmark scoreboard.",
+      "version": "1.0.0",
+      "category": "marketing",
+      "keywords": ["marketing", "lead-generation", "linkedin", "content-strategy", "cold-email", "pricing", "benchmarks"]
     }
   ]
 }
