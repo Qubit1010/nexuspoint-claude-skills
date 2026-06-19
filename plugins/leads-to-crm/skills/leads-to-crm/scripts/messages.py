@@ -1,14 +1,12 @@
 """Touch 1 message generation: OpenAI primary, Claude fallback.
 
-Per Aleem's call, OpenAI (gpt-5.4-mini) is the primary generator and Claude
-(claude-haiku-4-5) is the fallback. Each lead is attempted on OpenAI first; if
-that fails for any reason (no key, insufficient_quota, API error), it falls back
-to Claude. Only if BOTH fail do we leave the message blank.
+OpenAI (gpt-5.4-mini) is the primary generator and Claude (claude-haiku-4-5) is
+the fallback. Each lead is attempted on OpenAI first; if that fails for any reason
+(no key, insufficient_quota, API error), it falls back to Claude. Only if BOTH fail
+do we leave the message blank.
 
-This belt-and-suspenders setup is deliberate: the lead-gen OpenAI key has a
-history of hitting insufficient_quota, and the repo Anthropic key has run out of
-balance — having either provider able to cover for the other means a push almost
-never has to ship blank Touch 1 messages.
+This belt-and-suspenders setup is deliberate: having either provider cover for the
+other means a push almost never ships blank Touch 1 messages.
 
 Messages are grounded in the sales-playbook opener archetypes (distilled in
 references/message-archetypes.md). We rotate archetypes per lead so a batch reads
@@ -29,11 +27,9 @@ ANTHROPIC_MODEL = "claude-haiku-4-5"
 MODEL = f"{OPENAI_MODEL} (OpenAI) -> {ANTHROPIC_MODEL} (Claude) fallback"
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 
-# Order matters: env var wins, then repo root, then project .envs that hold keys.
+# Order matters: env var wins, then repo root .env.
 _ENV_FILES = (
     _REPO_ROOT / ".env",
-    _REPO_ROOT / "projects" / "bid-engine" / "backend" / ".env",
-    _REPO_ROOT / "projects" / "daily-news-brief" / ".env",
 )
 
 
@@ -102,12 +98,14 @@ _STYLE = {
     },
 }
 
-_SYSTEM = """You write the opening outreach message for Aleem Ul Hassan, founder of an AI \
-automation studio. This is Touch 1 of a sequence: the only goal is to start a real \
+_SENDER = os.environ.get("SENDER_IDENTITY", "a founder at a digital agency")
+
+_SYSTEM = f"""You write the opening outreach message for {_SENDER}. \
+This is Touch 1 of a sequence: the only goal is to start a real \
 conversation, never to pitch.
 
 Hard rules (these are what separate a reply from a delete):
-- No pitch. Never mention NexusPoint, services, "AI automation", websites, or what you sell.
+- No pitch. Never mention your company name, services, or what you sell.
 - One ask maximum. A single genuine question, or a connect request. Never a question AND a CTA.
 - No em-dashes ever. Use a comma or a period. (They corrupt downstream and read as AI.)
 - Count your "I"s: more than two means rewrite. Make it about them, not you.

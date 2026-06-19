@@ -2,7 +2,7 @@
 
 One engine, any channel. Reads the per-channel "Instant ... Leads" source sheet,
 decides what is genuinely new, generates a Touch 1 message (Claude Haiku), and
-appends to the matching "NexusPoint ... Outreach CRM".
+appends to the matching outreach CRM.
 
 The decision logic is the whole fix for the two old bugs. Per source row:
 
@@ -14,9 +14,9 @@ The decision logic is the whole fix for the two old bugs. Per source row:
   - identity resolves, not in CRM  -> PUSH: generate message, append, stamp "Added"
   - identity unresolvable          -> "Needs Review" (visible, never silently dropped)
 
-No follower / geo / post-URL auto-drops: Aleem curates the source sheet by hand,
-so the skill trusts the rows he marked. (Optional --filter-followers / --exclude-geo
-exist for when he wants them, off by default.)
+No follower / geo / post-URL auto-drops: the source sheet is assumed to be curated
+by hand, so the skill trusts the rows as-is. (Optional --filter-followers /
+--exclude-geo exist if you want them, off by default.)
 
 Usage:
   python push.py --channel instagram

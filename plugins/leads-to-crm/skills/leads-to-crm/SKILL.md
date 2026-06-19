@@ -1,39 +1,33 @@
 ---
 name: leads-to-crm
 description: >
-  NexusPoint's outreach lead router. Pushes manually-scraped leads from the
-  per-channel "Instant ... Leads" Google Sheets into the matching "NexusPoint ...
-  Outreach CRM", generating a personalized Touch 1 message (OpenAI gpt-5.4-mini, with a
-  Claude Haiku fallback) for each
-  new lead. Handles Instagram and LinkedIn today, built to extend to Facebook and
-  other channels. It only pushes rows that are genuinely new (identity-based dedup
-  on the @handle / LinkedIn slug) and never re-pushes or duplicates rows already in
-  the CRM, fixing the two long-standing bugs in the old lead-gen pipeline (new rows
-  silently dropped, sent rows duplicated). Use this skill whenever Aleem wants to
-  move scraped leads into a CRM or run the outreach sync. Trigger on: "push leads to
-  CRM", "sync my instagram leads", "sync linkedin leads", "run the instagram push",
-  "run the linkedin push", "push the new leads", "update the outreach CRM", "send
-  the instant leads to the CRM", "run leads to crm", "dedup the CRM", "fill the blank
-  DMs", "any new leads to push", "add facebook leads to the CRM". Also trigger when
-  Aleem mentions the Instant Instagram/LinkedIn Leads sheet, the Instagram/LinkedIn
-  Outreach CRM, or generating Touch 1 / connection messages for scraped leads.
+  Outreach lead router for agencies and teams. Pushes manually-scraped leads from
+  per-channel source Google Sheets into the matching outreach CRM, generating a
+  personalized Touch 1 message (OpenAI gpt-5.4-mini, with a Claude Haiku fallback)
+  for each new lead. Handles Instagram and LinkedIn today, built to extend to
+  Facebook and other channels. Identity-based dedup on the @handle / LinkedIn slug
+  means it only pushes genuinely new rows and never duplicates ones already in the
+  CRM. Trigger on: "push leads to CRM", "sync my instagram leads", "sync linkedin
+  leads", "run the instagram push", "run the linkedin push", "push the new leads",
+  "update the outreach CRM", "send the instant leads to the CRM", "run leads to crm",
+  "dedup the CRM", "fill the blank DMs", "any new leads to push", "add facebook leads
+  to the CRM". Also trigger when the user mentions the source leads sheet, the
+  outreach CRM, or generating Touch 1 / connection messages for scraped leads.
   Do NOT trigger for requests to scrape, find, source, or enrich leads (Apify, Apollo,
   hashtag scraping, email finding) - sourcing is done manually outside this skill, which
   only moves rows already sitting in the source sheet. Also not for live DM-reply drafting,
-  follow-up strategy, or benchmark questions (those are sales-playbook / marketing-advisor).
-  This replaces the archived instagram-outreach, linkedin-outreach, cold-outreach
-  skills and the projects/lead-gen push pipeline.
+  follow-up strategy, or benchmark questions.
 ---
 
 # Leads to CRM
 
-The current NexusPoint outreach loop, end to end:
+Your outreach loop, end to end:
 
-1. Aleem **manually scrapes** Instagram / LinkedIn (Instant Data Scraper) into a
-   per-channel source sheet ("Instant Instagram Leads", "Instant LinkedIn Leads").
+1. **Manually scrape** Instagram / LinkedIn (Instant Data Scraper) into a
+   per-channel source sheet (e.g. "Instant Instagram Leads", "Instant LinkedIn Leads").
 2. This skill reads that sheet, figures out which rows are **genuinely new**,
    writes a personalized **Touch 1 message** for each, and **appends them to the
-   matching CRM** ("NexusPoint Instagram/LinkedIn Outreach CRM").
+   matching CRM** (e.g. "Instagram Outreach CRM", "LinkedIn Outreach CRM").
 3. It stamps each pushed/known row **"Added"** back in the source sheet so the next
    run skips it.
 
@@ -67,9 +61,9 @@ push still runs but writes blank Touch 1 messages for you to fill later (`--no-m
 
 ## When to use
 
-Trigger whenever Aleem wants scraped leads moved into a CRM or the outreach synced:
+Trigger whenever scraped leads need to move into a CRM or the outreach needs syncing:
 "push the instagram leads", "sync my linkedin leads", "run the push", "any new leads
-to push", "dedup the CRM", "fill the blank messages". If he names a channel, use it;
+to push", "dedup the CRM", "fill the blank messages". If a channel is named, use it;
 if not, ask which channel (or run both).
 
 ## The two bugs this skill exists to fix
@@ -95,13 +89,12 @@ invariant is what keeps the CRM clean.
 
 ## Prerequisites
 
-- **gws CLI** (Google Workspace CLI) authenticated as hassanaleem86@gmail.com.
+- **gws CLI** (Google Workspace CLI) authenticated to your Google account.
   `scripts/sheets.py` locates it automatically (node + run.js on Windows).
 - **OPENAI_API_KEY** (primary) and/or **ANTHROPIC_API_KEY** (fallback) for message
   generation. Per lead, `scripts/messages.py` tries OpenAI (`gpt-5.4-mini`) first and
   falls back to Claude (`claude-haiku-4-5`) on any failure (no key, quota, error).
-  Keys are read from the environment, then the repo `.env`, then
-  `projects/bid-engine/backend/.env`, then `projects/daily-news-brief/.env`. If both
+  Keys are read from the environment or a `.env` file at the repo root. If both
   providers are unavailable (no keys, or both out of quota/credit), the push still
   runs and leaves Touch 1 blank (recoverable; see `--no-messages`).
 - Python with `openai` and/or `anthropic` installed (`pip install openai anthropic`).
@@ -109,7 +102,7 @@ invariant is what keeps the CRM clean.
 
 ## How to run
 
-Always start with a dry run so Aleem can see the decision table before any writes:
+Always start with a dry run to see the decision table before any writes:
 
 ```bash
 python .claude/skills/leads-to-crm/scripts/push.py --channel instagram --dry-run
@@ -126,13 +119,12 @@ Flags:
 
 - `--dry-run` — classify + preview only, write nothing.
 - `--no-messages` — push rows with a blank Touch 1 (e.g. if the Anthropic key is
-  down). Fill them later by re-running without the flag, or hand the blank rows to
-  the **sales-playbook** skill to write by hand.
+  down). Fill them later by re-running without the flag, or write them by hand.
 - `--dedup` — remove duplicate rows already in the CRM (keeps the first of each
   identity). Safe to run anytime; pair with `--dry-run` to preview.
 - `--limit N` — cap new pushes; useful for a small first live test.
 - `--filter-followers N` / `--exclude-geo` — opt-in ICP guards, **off by default**
-  because Aleem curates the source by hand. Only add them if he asks.
+  because the source sheet is assumed to be curated by hand before running.
 
 ## What each row becomes (the decision table)
 
@@ -154,7 +146,7 @@ Source "Instant ... Leads" (tab `Raw`, status column **"Include to CRM"**):
 - Instagram: `Name ("Name (@handle)") | Link | Followers | Note | Location/Designation | Include to CRM`
 - LinkedIn: `Link | Name | Followers | Note | Designation | Location | Company Name | Include to CRM`
 
-CRM "NexusPoint ... Outreach CRM" (tab `Leads`, 13 columns). The skill writes by
+CRM (tab `Leads`, 13 columns). The skill writes by
 **header name**, not position, so a column reorder won't corrupt it:
 - Instagram: `Name | Username | Company | Role | Instagram URL | Followers | Bio | Touch 1-4 | Status | Date Added`
 - LinkedIn: `Name | First Name | Company | Role | LinkedIn URL | Location | Recent Post | Touch 1-4 | Status | Date Added`
@@ -182,7 +174,6 @@ No changes to `push.py` are needed — that's the point of the config split.
 
 Touch 1 is written by OpenAI `gpt-5.4-mini` (primary), with Claude `claude-haiku-4-5`
 as a per-lead fallback if OpenAI fails, grounded in the opener archetypes in
-`references/message-archetypes.md` (distilled from the sales-playbook skill, the
-canonical source). Messages rotate archetypes per lead, strip em-dashes,
-respect the channel length cap, and never pitch. For the full sourced playbook or
-to evolve the prompts, read `.claude/skills/sales-playbook/`.
+`references/message-archetypes.md`. Messages rotate archetypes per lead, strip
+em-dashes, respect the channel length cap, and never pitch. To evolve the prompts,
+edit `references/message-archetypes.md` or the system prompt in `scripts/messages.py`.

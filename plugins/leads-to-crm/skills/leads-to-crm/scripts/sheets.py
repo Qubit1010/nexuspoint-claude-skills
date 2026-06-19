@@ -1,8 +1,7 @@
 """Google Sheets access via the gws CLI (Windows-friendly, no gspread).
 
-Ported from the lead-gen push scripts because that invocation pattern already
-works on Aleem's machine: it calls `node run.js` directly to dodge cmd.exe's
-8191-char limit when appending batches of rows.
+Calls `node run.js` directly to dodge cmd.exe's 8191-char limit when appending
+batches of rows.
 
 Everything here is channel-agnostic plumbing. Channel-specific column logic
 lives in channels.py; the orchestration lives in push.py.
